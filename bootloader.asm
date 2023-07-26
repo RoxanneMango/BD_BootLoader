@@ -2,30 +2,38 @@
 [ORG 0x7C00]
 
 JMP _start
-NOP
-RET
 
 ;===================================================================================================;
 ; MAIN LOOP																							;
 ;===================================================================================================;
 
+; Beginning of the code
 _start:
-	MOV SI, helloWorld
-	MOV AH, 0x00
-	MOV AX, 0x0012		; Select 640x480 16-color graphics video mode
-	int 0x10
-	CALL printString
-main_loop:
-	CALL getChar
-	CMP AL, 0x71		; char == q ? shutdown
-	JE _exit
-	JMP main_loop
+	CALL __setVideoMode_16color_graphics_640x480	; move from text mode to color mode
+	MOV AX, HELLO_WORLD_STR							; move string into register as first function param
+	CALL puts										; call puts(AX)
+	CALL puts										; call puts(AX)
+;	MOV AX, CHAR_@
+	MOV AX, 50
+	MOV BX, 70
+	CALL __putPixel
+	MOV AX, 51
+	MOV BX, 71
+	CALL __putPixel
+.loop__start:				; enter loop
+	CALL getchar			; wait for char input
+	CALL putchar			; echo getchar output
+	CMP AL, 0x71			; if getchar output is equal to 'q'
+	JE .shutdown__start		; goto shutdown to power off the pc
+	JMP .loop__start		; else return to start of loop
+.shutdown__start:
+	CALL __shutdown			; power off the pc
 _exit:
-	MOV AX, 0x5307
-	MOV CX, 0x0003
-	INT 0x15			; advanced power management --shutdown interrupt
+	HLT						; halt
+	RET						; RETURN
 
 %include "io.asm"
+%include "sys.asm"
 
 ;===================================================================================================;
 ; PADDING + BOOTLOADER-SIGN																			;
